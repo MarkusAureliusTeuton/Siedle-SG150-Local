@@ -6,7 +6,7 @@ from contextlib import suppress
 import aiohttp
 from aiohttp import web
 
-from homeassistant.components.camera import Camera, CameraEntityFeature
+from homeassistant.components.camera import Camera
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import (
@@ -36,7 +36,6 @@ class SG150Camera(Camera):
     _attr_has_entity_name = True
     _attr_name = "Haustür"
     _attr_is_on = True
-    _attr_supported_features = CameraEntityFeature.STREAM
 
     def __init__(self, entry: ConfigEntry, monitor: SG150PortMonitor) -> None:
         super().__init__()
@@ -55,9 +54,6 @@ class SG150Camera(Camera):
     @property
     def available(self) -> bool:
         return self._monitor.is_open
-
-    async def stream_source(self) -> str:
-        return self._url
 
     async def async_camera_image(
         self,
@@ -99,6 +95,9 @@ class SG150Camera(Camera):
         try:
             return await async_aiohttp_proxy_web(self.hass, request, stream_coro)
         except (aiohttp.ClientError, OSError, ConnectionResetError):
+            # Port 20502 only exists while a door-video session is active.
+            # A closed port outside a ring is expected and must not start HA's
+            # generic stream worker or be treated as a persistent camera error.
             return None
 
     async def async_added_to_hass(self) -> None:
