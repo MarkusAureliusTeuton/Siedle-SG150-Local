@@ -6,6 +6,9 @@ Lokale Home-Assistant-Custom-Integration für **Siedle Smart Gateway SG150-0**.
 
 - überwacht die lokale SG150-Videosession über den transient geöffneten MJPEG-Port `20502`
 - stellt den lokalen Türruf-/Videosession-Status als Home-Assistant-Entität bereit
+- kann pro Türruf automatisch ein Besucherbild aus dem lokalen MJPEG-Stream archivieren
+- speichert die JPEGs nach Jahr/Monat/Tag auf der HA-Festplatte und führt parallel eine SQLite-Zeithistorie
+- stellt das zuletzt archivierte Besucherbild als eigene Kamera-Entität bereit
 - stellt eine Home-Assistant-Kamera für den lokalen SG150-MJPEG-Stream bereit
 - steuert optional ein über die offizielle Home-Assistant-Fully-Kiosk-Integration eingebundenes Android-Wandtablet
 - kann beim bestehenden lokalen Türruftrigger automatisch:
@@ -106,6 +109,57 @@ einstellen:
 
 Die vorhandene „Türansicht anzeigen“-Taste verwendet automatisch den gewählten Modus. Ist die Siedle-App-Anzeige aktiv, dient die Taste gleichzeitig als manueller Funktionstest.
 
+## Besucherbild-Historie
+
+Ab v0.6.0 kann die Integration bei jeder erkannten SG150-Videosession automatisch **ein JPEG** speichern.
+
+Standardmäßig erfolgt die Aufnahme **5 Sekunden nach Beginn der Videosession**. Das entspricht der Siedle-Standardeinstellung für den automatischen Bildspeicher. Der archivierte Frame wird aber von dieser Integration direkt aus dem lokalen MJPEG-Stream auf Port `20502` gelesen. Er ist daher zeitlich vergleichbar, aber nicht garantiert byte-/frame-identisch mit dem intern vom SG150 gespeicherten Bild.
+
+Standard-Speicherort:
+
+`/config/sg150_history`
+
+Struktur:
+
+`/config/sg150_history/YYYY/MM/DD/YYYY-MM-DD_HH-MM-SS_mmm.jpg`
+
+Zusätzlich:
+
+`/config/sg150_history/history.sqlite3`
+
+Die SQLite-Datenbank enthält pro Bild:
+
+- UTC-Zeitstempel
+- lokale Zeit
+- Dateipfad
+- Dateigröße
+- SHA-256
+- Quelle (`automatic` oder `manual`)
+
+Optionen:
+
+- Historie EIN/AUS
+- Aufnahmeverzögerung
+- Aufbewahrung in Tagen
+- maximale Bildanzahl
+- Speicherordner relativ zu `/config`
+
+Standard:
+
+- Historie: EIN
+- Aufnahmeverzögerung: 5 s
+- Aufbewahrung: 30 Tage
+- maximal: 1000 Bilder
+- Ordner: `sg150_history`
+
+Neue Entitäten:
+
+- Kamera **Letztes Besucherbild**
+- Sensor **Besucherbild-Historie**
+- Button **Besucherbild jetzt speichern** (nur während aktiver Videosession)
+
+Die automatische Löschung entfernt sowohl den SQLite-Eintrag als auch die zugehörige JPEG-Datei.
+
 ## Diagnose
 
 Der Sensor **Tabletsteuerung** zeigt unter anderem:
@@ -123,7 +177,19 @@ Der Sensor **Tabletsteuerung** zeigt unter anderem:
 
 ## Status
 
-Aktuelle Version: **0.5.2**
+Aktuelle Version: **0.6.0**
+
+### v0.6.0
+
+- automatische Besucherbild-Historie aus dem lokalen SG150-MJPEG-Stream
+- standardmäßig ein Bild 5 Sekunden nach Türruf/Videosession
+- JPEG-Dateien nach Datum strukturiert auf der HA-Festplatte
+- SQLite-Datenbank mit Zeitstempel und Metadaten
+- konfigurierbare Aufbewahrung, Maximalanzahl und Speicherordner
+- eigene Kamera-Entität **Letztes Besucherbild**
+- Sensor **Besucherbild-Historie**
+- manueller Button **Besucherbild jetzt speichern**
+- gemeinsame MJPEG-Frame-Leselogik für Livekamera und Historie
 
 ### v0.5.2
 
