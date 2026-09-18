@@ -52,7 +52,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
-    await monitor.async_start()
+    await monitor.async_start(entry)
     await controller.async_start()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
