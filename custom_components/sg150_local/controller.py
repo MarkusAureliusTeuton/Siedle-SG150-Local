@@ -4,6 +4,8 @@ import asyncio
 from collections.abc import Callable
 import logging
 from urllib.parse import urljoin
+from datetime import datetime, timezone
+import time
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Event, HomeAssistant, callback
@@ -53,6 +55,11 @@ class SG150TabletController:
         self.state = "bereit"
         self.last_action = ""
         self.last_error = ""
+        self.trigger_count = 0
+        self.auto_start_count = 0
+        self.last_trigger_source = ""
+        self.last_trigger_at: datetime | None = None
+        self._last_trigger_monotonic = 0.0
 
         self._listeners: set[Callable[[], None]] = set()
         self._remove_monitor_listener: Callable[[], None] | None = None
@@ -91,16 +98,23 @@ class SG150TabletController:
             return
 
         @callback
-        def _doorbell_event(event: Event) -> None:
-            if (
-                event.data.get("host") != self.monitor.host
-                or int(event.data.get("port", -1)) != self.monitor.port
-            ):
+        def _trigger_door(source: str) -> None:
+            # Event bus and direct monitor callback can describe the same edge.
+            # De-duplicate a single physical ring while keeping both paths as
+            # independent fallbacks.
+            now_mono = time.monotonic()
+            if now_mono - self._last_trigger_monotonic < 1.0:
                 return
+            self._last_trigger_monotonic = now_mono
 
+            self.trigger_count += 1
+            self.last_trigger_source = source
+            self.last_trigger_at = datetime.now(timezone.utc)
             self._cancel_return()
-            self._set_status("türruf erkannt", "Automatischer Türruf")
+            self._set_status("türruf erkannt", f"Automatischer Türruf ({source})")
+
             if self.auto_enabled:
+                self.auto_start_count += 1
                 self._start_door_task()
             else:
                 self._set_status(
@@ -110,16 +124,32 @@ class SG150TabletController:
                 )
 
         @callback
+        def _monitor_changed() -> None:
+            if self.monitor.is_open:
+                _trigger_door("monitor")
+            elif self.entry.options.get(CONF_RETURN_HOME, DEFAULT_RETURN_HOME):
+                self._start_return_task()
+
+        @callback
+        def _doorbell_event(event: Event) -> None:
+            if (
+                event.data.get("host") != self.monitor.host
+                or int(event.data.get("port", -1)) != self.monitor.port
+            ):
+                return
+            _trigger_door("event")
+
+        @callback
         def _video_ended_event(event: Event) -> None:
             if (
                 event.data.get("host") != self.monitor.host
                 or int(event.data.get("port", -1)) != self.monitor.port
             ):
                 return
-
             if self.entry.options.get(CONF_RETURN_HOME, DEFAULT_RETURN_HOME):
                 self._start_return_task()
 
+        self._remove_monitor_listener = self.monitor.add_listener(_monitor_changed)
         self._remove_doorbell_event = self.hass.bus.async_listen(
             "sg150_local_doorbell", _doorbell_event
         )
