@@ -21,7 +21,7 @@
     "step": {
       "init": {
         "title": "Türtablet und Siedle-App",
-        "description": "Empfohlen: Der bestehende lokale SG150-Türruftrigger schaltet das Tablet ein und holt die bereits im Hintergrund aktive Siedle-App in den Vordergrund. Nach Ende der Videosession kann automatisch zu Fully/Home Assistant zurückgekehrt werden. Die HA-Türansicht bleibt als alternative Anzeige verfügbar.",
+        "description": "Empfohlen: Der bestehende lokale SG150-Türruftrigger schaltet das Tablet ein und holt die bereits im Hintergrund aktive Siedle-App in den Vordergrund. Wichtig: Android darf dabei keinen System-Sperrbildschirm erzwingen; Fully kann andere Apps nicht durch den Android-Keyguard hindurch anzeigen. Für ein Wandtablet daher Android-Sperre 'Keine' und Schutz über Fully Kiosk Mode/PIN verwenden. Nach Ende der Videosession kann automatisch zu Fully/Home Assistant zurückgekehrt werden.",
         "data": {
           "fully_device_id": "Fully-Kiosk-Tablet",
           "fully_screen_entity": "Fully-Kiosk Screen-Schalter",
