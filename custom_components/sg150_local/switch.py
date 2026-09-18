@@ -5,7 +5,6 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.helpers.restore_state import RestoreEntity
 
 from .const import DOMAIN, RUNTIME_CONTROLLER
 from .controller import SG150TabletController
@@ -22,7 +21,7 @@ async def async_setup_entry(
     async_add_entities([SG150AutoTabletSwitch(entry, controller)])
 
 
-class SG150AutoTabletSwitch(SwitchEntity, RestoreEntity):
+class SG150AutoTabletSwitch(SwitchEntity):
     _attr_has_entity_name = True
     _attr_name = "Automatische Türanzeige"
     _attr_icon = "mdi:tablet-cellphone"
@@ -53,10 +52,6 @@ class SG150AutoTabletSwitch(SwitchEntity, RestoreEntity):
         self.async_write_ha_state()
 
     async def async_added_to_hass(self) -> None:
-        last = await self.async_get_last_state()
-        if last is not None:
-            self._controller.set_auto_enabled(last.state == "on")
-
         @callback
         def _update() -> None:
             self.async_write_ha_state()
