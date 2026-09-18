@@ -49,6 +49,16 @@ class SG150TabletStatusSensor(SensorEntity):
     def extra_state_attributes(self) -> dict:
         return {
             "automatic": self._controller.auto_enabled,
+            "configured": self._controller.configured,
+            "monitor_open": self._controller.monitor.is_open,
+            "trigger_count": self._controller.trigger_count,
+            "auto_start_count": self._controller.auto_start_count,
+            "last_trigger_source": self._controller.last_trigger_source or None,
+            "last_trigger_at": (
+                self._controller.last_trigger_at.isoformat()
+                if self._controller.last_trigger_at
+                else None
+            ),
             "last_action": self._controller.last_action,
             "last_error": self._controller.last_error or None,
         }
