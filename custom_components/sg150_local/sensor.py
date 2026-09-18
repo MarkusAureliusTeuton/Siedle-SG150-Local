@@ -6,7 +6,12 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .const import DOMAIN, RUNTIME_CONTROLLER
+from .const import (
+    CONF_RETURN_HOME,
+    DEFAULT_RETURN_HOME,
+    DOMAIN,
+    RUNTIME_CONTROLLER,
+)
 from .controller import SG150TabletController
 
 
@@ -29,6 +34,7 @@ class SG150TabletStatusSensor(SensorEntity):
     def __init__(
         self, entry: ConfigEntry, controller: SG150TabletController
     ) -> None:
+        self._entry = entry
         self._controller = controller
         self._attr_unique_id = f"{entry.entry_id}_tablet_status"
         self._attr_device_info = DeviceInfo(
@@ -51,6 +57,13 @@ class SG150TabletStatusSensor(SensorEntity):
             "automatic": self._controller.auto_enabled,
             "configured": self._controller.configured,
             "monitor_open": self._controller.monitor.is_open,
+            "display_target": (
+                "siedle_app" if self._controller.use_siedle_app else "ha_door_view"
+            ),
+            "siedle_app_package": self._controller.siedle_app_package,
+            "return_to_fully": self._entry.options.get(
+                CONF_RETURN_HOME, DEFAULT_RETURN_HOME
+            ),
             "trigger_count": self._controller.trigger_count,
             "auto_start_count": self._controller.auto_start_count,
             "last_trigger_source": self._controller.last_trigger_source or None,

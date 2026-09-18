@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
-import logging
-from urllib.parse import urljoin
 from datetime import datetime, timezone
+import logging
 import time
+from urllib.parse import urljoin
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Event, HomeAssistant, callback
@@ -21,6 +21,10 @@ from .const import (
     CONF_RELOAD_DELAY_MS,
     CONF_RETURN_DELAY_S,
     CONF_RETURN_HOME,
+    CONF_SIEDLE_APP_PACKAGE,
+    CONF_SIEDLE_APP_START_COUNT,
+    CONF_SIEDLE_APP_START_DELAY_MS,
+    CONF_USE_SIEDLE_APP,
     CONF_WAKE_DELAY_MS,
     DEFAULT_AUTO_TABLET,
     DEFAULT_DOOR_PATH,
@@ -29,15 +33,21 @@ from .const import (
     DEFAULT_RELOAD_DELAY_MS,
     DEFAULT_RETURN_DELAY_S,
     DEFAULT_RETURN_HOME,
+    DEFAULT_SIEDLE_APP_PACKAGE,
+    DEFAULT_SIEDLE_APP_START_COUNT,
+    DEFAULT_SIEDLE_APP_START_DELAY_MS,
+    DEFAULT_USE_SIEDLE_APP,
     DEFAULT_WAKE_DELAY_MS,
 )
 from .monitor import SG150PortMonitor
 
 _LOGGER = logging.getLogger(__name__)
 
+FULLY_PACKAGE = "de.ozerov.fully"
+
 
 class SG150TabletController:
-    """Orchestrate the local Fully Kiosk door view."""
+    """Orchestrate the Fully/Siedle-App wall-tablet workflow."""
 
     def __init__(
         self,
@@ -72,6 +82,21 @@ class SG150TabletController:
     def configured(self) -> bool:
         return bool(self.entry.options.get(CONF_FULLY_DEVICE_ID))
 
+    @property
+    def use_siedle_app(self) -> bool:
+        return bool(
+            self.entry.options.get(CONF_USE_SIEDLE_APP, DEFAULT_USE_SIEDLE_APP)
+        )
+
+    @property
+    def siedle_app_package(self) -> str:
+        package = str(
+            self.entry.options.get(
+                CONF_SIEDLE_APP_PACKAGE, DEFAULT_SIEDLE_APP_PACKAGE
+            )
+        ).strip()
+        return package or DEFAULT_SIEDLE_APP_PACKAGE
+
     def add_listener(self, callback: Callable[[], None]) -> Callable[[], None]:
         self._listeners.add(callback)
 
@@ -81,8 +106,8 @@ class SG150TabletController:
         return remove
 
     def _notify(self) -> None:
-        for callback in tuple(self._listeners):
-            callback()
+        for listener in tuple(self._listeners):
+            listener()
 
     def _set_status(
         self, state: str, action: str = "", error: str = ""
@@ -100,8 +125,7 @@ class SG150TabletController:
         @callback
         def _trigger_door(source: str) -> None:
             # Event bus and direct monitor callback can describe the same edge.
-            # De-duplicate a single physical ring while keeping both paths as
-            # independent fallbacks.
+            # De-duplicate one physical ring while keeping both paths as fallbacks.
             now_mono = time.monotonic()
             if now_mono - self._last_trigger_monotonic < 1.0:
                 return
@@ -239,25 +263,51 @@ class SG150TabletController:
             blocking=True,
         )
 
-    async def _async_start_fully(self) -> None:
+    async def _async_start_application(self, package_name: str) -> None:
         device_id = self.entry.options.get(CONF_FULLY_DEVICE_ID)
         if not device_id:
             raise RuntimeError("Kein Fully-Kiosk-Gerät konfiguriert.")
 
         if not self.hass.services.has_service("fully_kiosk", "start_application"):
-            raise RuntimeError(
-                "Fully-Kiosk-Integration ist nicht verfügbar."
-            )
+            raise RuntimeError("Fully-Kiosk-Integration ist nicht verfügbar.")
 
         await self.hass.services.async_call(
             "fully_kiosk",
             "start_application",
             {
                 "device_id": device_id,
-                "application": "de.ozerov.fully",
+                "application": package_name,
             },
             blocking=True,
         )
+
+    async def _async_start_fully(self) -> None:
+        await self._async_start_application(FULLY_PACKAGE)
+
+    async def _async_start_siedle_app(self) -> None:
+        count = max(
+            1,
+            min(
+                4,
+                int(
+                    self.entry.options.get(
+                        CONF_SIEDLE_APP_START_COUNT,
+                        DEFAULT_SIEDLE_APP_START_COUNT,
+                    )
+                ),
+            ),
+        )
+        delay_ms = int(
+            self.entry.options.get(
+                CONF_SIEDLE_APP_START_DELAY_MS,
+                DEFAULT_SIEDLE_APP_START_DELAY_MS,
+            )
+        )
+
+        for index in range(count):
+            await self._async_start_application(self.siedle_app_package)
+            if index + 1 < count:
+                await asyncio.sleep(max(0.0, delay_ms / 1000.0))
 
     async def _async_load_url(self, url: str) -> None:
         device_id = self.entry.options.get(CONF_FULLY_DEVICE_ID)
@@ -265,9 +315,7 @@ class SG150TabletController:
             raise RuntimeError("Kein Fully-Kiosk-Gerät konfiguriert.")
 
         if not self.hass.services.has_service("fully_kiosk", "load_url"):
-            raise RuntimeError(
-                "Fully-Kiosk-Integration ist nicht verfügbar."
-            )
+            raise RuntimeError("Fully-Kiosk-Integration ist nicht verfügbar.")
 
         await self.hass.services.async_call(
             "fully_kiosk",
@@ -276,49 +324,56 @@ class SG150TabletController:
             blocking=True,
         )
 
+    async def _async_show_ha_door_view(self) -> None:
+        url = self._absolute_url(
+            self.entry.options.get(CONF_DOOR_PATH, DEFAULT_DOOR_PATH)
+        )
+        repeat_count = max(
+            1,
+            min(
+                4,
+                int(
+                    self.entry.options.get(
+                        CONF_RELOAD_COUNT, DEFAULT_RELOAD_COUNT
+                    )
+                ),
+            ),
+        )
+        repeat_delay_ms = int(
+            self.entry.options.get(
+                CONF_RELOAD_DELAY_MS, DEFAULT_RELOAD_DELAY_MS
+            )
+        )
+
+        await self._async_start_fully()
+        for index in range(repeat_count):
+            if index:
+                await self._async_start_fully()
+            await self._async_load_url(url)
+            if index + 1 < repeat_count:
+                await asyncio.sleep(max(0.0, repeat_delay_ms / 1000.0))
+
     async def async_show_door_view(self) -> None:
         if not self.configured:
             self._set_status("nicht konfiguriert", "Türansicht")
             return
 
         try:
-            self._set_status("aktiv", "Türansicht")
+            action = "Siedle-App" if self.use_siedle_app else "HA-Türansicht"
+            self._set_status("aktiv", action)
             await self._async_turn_screen(True)
-            await self._async_start_fully()
 
             wake_ms = int(
                 self.entry.options.get(CONF_WAKE_DELAY_MS, DEFAULT_WAKE_DELAY_MS)
             )
             await asyncio.sleep(max(0.0, wake_ms / 1000.0))
 
-            url = self._absolute_url(
-                self.entry.options.get(CONF_DOOR_PATH, DEFAULT_DOOR_PATH)
-            )
-            repeat_count = max(
-                1,
-                min(
-                    4,
-                    int(
-                        self.entry.options.get(
-                            CONF_RELOAD_COUNT, DEFAULT_RELOAD_COUNT
-                        )
-                    ),
-                ),
-            )
-            repeat_delay_ms = int(
-                self.entry.options.get(
-                    CONF_RELOAD_DELAY_MS, DEFAULT_RELOAD_DELAY_MS
-                )
-            )
-
-            for index in range(repeat_count):
-                if index:
-                    await self._async_start_fully()
-                await self._async_load_url(url)
-                if index + 1 < repeat_count:
-                    await asyncio.sleep(max(0.0, repeat_delay_ms / 1000.0))
-
-            self._set_status("türansicht", "Türansicht")
+            if self.use_siedle_app:
+                await self._async_start_siedle_app()
+                self._set_status("siedle-app", "Siedle-App im Vordergrund")
+            else:
+                await self._async_show_ha_door_view()
+                self._set_status("türansicht", "HA-Türansicht")
         except asyncio.CancelledError:
             raise
         except Exception as err:
