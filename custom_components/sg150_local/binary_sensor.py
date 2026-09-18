@@ -45,6 +45,13 @@ class SG150DoorbellBinarySensor(BinarySensorEntity):
         return {
             "host": self._monitor.host,
             "port": self._monitor.port,
+            "monitor_running": self._monitor.task_running,
+            "probe_count": self._monitor.probe_count,
+            "last_probe_at": (
+                self._monitor.last_probe_at.isoformat()
+                if self._monitor.last_probe_at
+                else None
+            ),
             "last_opened_at": (
                 self._monitor.last_opened_at.isoformat()
                 if self._monitor.last_opened_at
