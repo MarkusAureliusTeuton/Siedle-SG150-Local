@@ -12,6 +12,11 @@ from .const import (
     CONF_FULLY_DEVICE_ID,
     CONF_FULLY_SCREEN_ENTITY,
     CONF_HOME_PATH,
+    CONF_HISTORY_DELAY_S,
+    CONF_HISTORY_ENABLED,
+    CONF_HISTORY_MAX_IMAGES,
+    CONF_HISTORY_RETENTION_DAYS,
+    CONF_HISTORY_STORAGE_DIR,
     CONF_HOST,
     CONF_OFF_CONFIRMATIONS,
     CONF_POLL_INTERVAL_MS,
@@ -28,6 +33,11 @@ from .const import (
     DEFAULT_AUTO_TABLET,
     DEFAULT_DOOR_PATH,
     DEFAULT_HOME_PATH,
+    DEFAULT_HISTORY_DELAY_S,
+    DEFAULT_HISTORY_ENABLED,
+    DEFAULT_HISTORY_MAX_IMAGES,
+    DEFAULT_HISTORY_RETENTION_DAYS,
+    DEFAULT_HISTORY_STORAGE_DIR,
     DEFAULT_HOST,
     DEFAULT_OFF_CONFIRMATIONS,
     DEFAULT_POLL_INTERVAL_MS,
@@ -228,6 +238,58 @@ class SG150OptionsFlow(config_entries.OptionsFlow):
                 vol.Required(
                     CONF_HOME_PATH,
                     default=options.get(CONF_HOME_PATH, DEFAULT_HOME_PATH),
+                ): selector.TextSelector(),
+                vol.Required(
+                    CONF_HISTORY_ENABLED,
+                    default=options.get(
+                        CONF_HISTORY_ENABLED, DEFAULT_HISTORY_ENABLED
+                    ),
+                ): selector.BooleanSelector(),
+                vol.Required(
+                    CONF_HISTORY_DELAY_S,
+                    default=options.get(
+                        CONF_HISTORY_DELAY_S, DEFAULT_HISTORY_DELAY_S
+                    ),
+                ): selector.NumberSelector(
+                    {
+                        "min": 0,
+                        "max": 30,
+                        "step": 0.5,
+                        "mode": "box",
+                    }
+                ),
+                vol.Required(
+                    CONF_HISTORY_RETENTION_DAYS,
+                    default=options.get(
+                        CONF_HISTORY_RETENTION_DAYS,
+                        DEFAULT_HISTORY_RETENTION_DAYS,
+                    ),
+                ): selector.NumberSelector(
+                    {
+                        "min": 1,
+                        "max": 3650,
+                        "step": 1,
+                        "mode": "box",
+                    }
+                ),
+                vol.Required(
+                    CONF_HISTORY_MAX_IMAGES,
+                    default=options.get(
+                        CONF_HISTORY_MAX_IMAGES, DEFAULT_HISTORY_MAX_IMAGES
+                    ),
+                ): selector.NumberSelector(
+                    {
+                        "min": 1,
+                        "max": 100000,
+                        "step": 1,
+                        "mode": "box",
+                    }
+                ),
+                vol.Required(
+                    CONF_HISTORY_STORAGE_DIR,
+                    default=options.get(
+                        CONF_HISTORY_STORAGE_DIR, DEFAULT_HISTORY_STORAGE_DIR
+                    ),
                 ): selector.TextSelector(),
             }
         )
