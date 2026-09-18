@@ -304,9 +304,12 @@ class SG150TabletController:
             self._set_status("aktiv", "Startseite")
             await self._async_turn_screen(True)
             await self._async_start_fully()
-            url = self._absolute_url(
-                self.entry.options.get(CONF_HOME_PATH, DEFAULT_HOME_PATH)
-            )
+            home_path = self.entry.options.get(CONF_HOME_PATH, DEFAULT_HOME_PATH)
+            # v0.3.x used this placeholder although many HA installations do
+            # not have such a dashboard. Keep existing users working.
+            if home_path == "/dashboard-home/0":
+                home_path = "/"
+            url = self._absolute_url(home_path)
             await self._async_load_url(url)
             self._set_status("startseite", "Startseite")
         except asyncio.CancelledError:
