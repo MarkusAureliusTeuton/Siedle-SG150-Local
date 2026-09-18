@@ -1,0 +1,40 @@
+{
+  "title": "Siedle SG150 Local",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Siedle SG150 locally",
+        "description": "Monitors the local MJPEG port. No cloud or Internet required.",
+        "data": {
+          "host": "SG150 IP address",
+          "port": "MJPEG port",
+          "poll_interval_ms": "Polling interval in ms",
+          "off_confirmations": "Failed probes until OFF"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "This SG150 instance is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Door tablet and display",
+        "description": "Optional: Control Fully Kiosk directly from the Siedle integration.",
+        "data": {
+          "fully_device_id": "Fully Kiosk tablet",
+          "fully_screen_entity": "Fully Kiosk screen switch",
+          "door_path": "Door view path/URL",
+          "home_path": "Normal home view path/URL",
+          "auto_tablet": "Automatically show tablet on doorbell",
+          "wake_delay_ms": "Delay after display on in ms",
+          "reload_count": "Number of door page loads",
+          "reload_delay_ms": "Delay between reloads in ms",
+          "return_home": "Return to home view after doorbell",
+          "return_delay_s": "Return delay in seconds"
+        }
+      }
+    }
+  }
+}
