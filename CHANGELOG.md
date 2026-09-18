@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.1
+
+- Beim Türruf wird nach dem Einschalten des Displays zuerst Fully Kiosk in den Vordergrund geholt.
+- Erst danach wird die Siedle-App gestartet.
+- Das reduziert Fälle, in denen Androids Sperrbildschirm vor der Rufansicht stehen bleibt.
+- Für zuverlässigen Betrieb **Fully → Device Management → Unlock Screen** aktivieren.
+- Ein sicherer Android-PIN-/Muster-Sperrbildschirm kann von HA/Fully nicht zuverlässig umgangen werden; auf einem dedizierten Wandtablet sollte Android daher ohne System-Sperre laufen und Fully selbst den Kioskzugriff absichern.
+
+
 ## 0.5.0
 
 - Neuer empfohlener Tablet-Modus: Die Integration holt beim **bereits vorhandenen lokalen SG150-Türruftrigger** die offizielle Siedle-App in den Vordergrund.
