@@ -33,10 +33,16 @@ class SG150PortMonitor:
         self.is_open = False
         self.last_opened_at: datetime | None = None
         self.last_closed_at: datetime | None = None
+        self.last_probe_at: datetime | None = None
+        self.probe_count = 0
         self._failures = 0
         self._listeners: set[Callable[[], None]] = set()
         self._task: asyncio.Task | None = None
         self._stop = asyncio.Event()
+
+    @property
+    def task_running(self) -> bool:
+        return self._task is not None and not self._task.done()
 
     def add_listener(self, callback: Callable[[], None]) -> Callable[[], None]:
         self._listeners.add(callback)
@@ -69,6 +75,8 @@ class SG150PortMonitor:
     async def _probe(self) -> bool:
         writer = None
         try:
+            # The SG150 MJPEG port only exists during the transient door-video
+            # session. A refused connection is therefore the normal idle state.
             async with asyncio.timeout(min(0.2, max(0.08, self.poll_interval))):
                 _reader, writer = await asyncio.open_connection(self.host, self.port)
             return True
@@ -76,15 +84,24 @@ class SG150PortMonitor:
             return False
         finally:
             if writer is not None:
+                # Important: never let a diagnostic TCP probe block the monitor
+                # while waiting for the SG150 to finish the TCP close handshake.
+                # Some SG150 video sessions keep the socket teardown pending.
                 writer.close()
                 try:
-                    await writer.wait_closed()
-                except OSError:
+                    async with asyncio.timeout(0.05):
+                        await writer.wait_closed()
+                except (TimeoutError, OSError):
                     pass
 
     def _notify(self) -> None:
         for callback in tuple(self._listeners):
-            callback()
+            try:
+                callback()
+            except Exception:
+                # One entity/listener must never be able to terminate the
+                # long-running port monitor.
+                _LOGGER.exception("SG150 monitor listener failed")
 
     def _set_open(self, value: bool) -> None:
         if value == self.is_open:
@@ -121,18 +138,27 @@ class SG150PortMonitor:
     async def _run(self) -> None:
         try:
             while not self._stop.is_set():
-                open_now = await self._probe()
+                try:
+                    self.probe_count += 1
+                    self.last_probe_at = datetime.now(timezone.utc)
+                    open_now = await self._probe()
 
-                if open_now:
-                    self._failures = 0
-                    self._set_open(True)
-                elif self.is_open:
-                    self._failures += 1
-                    if self._failures >= self.off_confirmations:
+                    if open_now:
                         self._failures = 0
-                        self._set_open(False)
-                else:
-                    self._failures = 0
+                        self._set_open(True)
+                    elif self.is_open:
+                        self._failures += 1
+                        if self._failures >= self.off_confirmations:
+                            self._failures = 0
+                            self._set_open(False)
+                    else:
+                        self._failures = 0
+                except asyncio.CancelledError:
+                    raise
+                except Exception:
+                    # A transient unexpected error must not permanently kill
+                    # doorbell detection. Log it and continue with the next probe.
+                    _LOGGER.exception("Unexpected SG150 port-monitor probe error")
 
                 try:
                     await asyncio.wait_for(
@@ -142,5 +168,3 @@ class SG150PortMonitor:
                     pass
         except asyncio.CancelledError:
             raise
-        except Exception:
-            _LOGGER.exception("Unexpected SG150 port-monitor error")
