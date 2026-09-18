@@ -20,6 +20,10 @@ from .const import (
     CONF_RELOAD_DELAY_MS,
     CONF_RETURN_DELAY_S,
     CONF_RETURN_HOME,
+    CONF_SIEDLE_APP_PACKAGE,
+    CONF_SIEDLE_APP_START_COUNT,
+    CONF_SIEDLE_APP_START_DELAY_MS,
+    CONF_USE_SIEDLE_APP,
     CONF_WAKE_DELAY_MS,
     DEFAULT_AUTO_TABLET,
     DEFAULT_DOOR_PATH,
@@ -32,6 +36,10 @@ from .const import (
     DEFAULT_RELOAD_DELAY_MS,
     DEFAULT_RETURN_DELAY_S,
     DEFAULT_RETURN_HOME,
+    DEFAULT_SIEDLE_APP_PACKAGE,
+    DEFAULT_SIEDLE_APP_START_COUNT,
+    DEFAULT_SIEDLE_APP_START_DELAY_MS,
+    DEFAULT_USE_SIEDLE_APP,
     DEFAULT_WAKE_DELAY_MS,
     DOMAIN,
 )
@@ -120,17 +128,21 @@ class SG150OptionsFlow(config_entries.OptionsFlow):
                     }
                 ),
                 vol.Required(
-                    CONF_DOOR_PATH,
-                    default=options.get(CONF_DOOR_PATH, DEFAULT_DOOR_PATH),
-                ): selector.TextSelector(),
-                vol.Required(
-                    CONF_HOME_PATH,
-                    default=options.get(CONF_HOME_PATH, DEFAULT_HOME_PATH),
-                ): selector.TextSelector(),
-                vol.Required(
                     CONF_AUTO_TABLET,
                     default=options.get(CONF_AUTO_TABLET, DEFAULT_AUTO_TABLET),
                 ): selector.BooleanSelector(),
+                vol.Required(
+                    CONF_USE_SIEDLE_APP,
+                    default=options.get(
+                        CONF_USE_SIEDLE_APP, DEFAULT_USE_SIEDLE_APP
+                    ),
+                ): selector.BooleanSelector(),
+                vol.Required(
+                    CONF_SIEDLE_APP_PACKAGE,
+                    default=options.get(
+                        CONF_SIEDLE_APP_PACKAGE, DEFAULT_SIEDLE_APP_PACKAGE
+                    ),
+                ): selector.TextSelector(),
                 vol.Required(
                     CONF_WAKE_DELAY_MS,
                     default=options.get(CONF_WAKE_DELAY_MS, DEFAULT_WAKE_DELAY_MS),
@@ -142,6 +154,38 @@ class SG150OptionsFlow(config_entries.OptionsFlow):
                         "mode": "box",
                     }
                 ),
+                vol.Required(
+                    CONF_SIEDLE_APP_START_COUNT,
+                    default=options.get(
+                        CONF_SIEDLE_APP_START_COUNT,
+                        DEFAULT_SIEDLE_APP_START_COUNT,
+                    ),
+                ): selector.NumberSelector(
+                    {
+                        "min": 1,
+                        "max": 4,
+                        "step": 1,
+                        "mode": "box",
+                    }
+                ),
+                vol.Required(
+                    CONF_SIEDLE_APP_START_DELAY_MS,
+                    default=options.get(
+                        CONF_SIEDLE_APP_START_DELAY_MS,
+                        DEFAULT_SIEDLE_APP_START_DELAY_MS,
+                    ),
+                ): selector.NumberSelector(
+                    {
+                        "min": 0,
+                        "max": 3000,
+                        "step": 50,
+                        "mode": "box",
+                    }
+                ),
+                vol.Required(
+                    CONF_DOOR_PATH,
+                    default=options.get(CONF_DOOR_PATH, DEFAULT_DOOR_PATH),
+                ): selector.TextSelector(),
                 vol.Required(
                     CONF_RELOAD_COUNT,
                     default=options.get(CONF_RELOAD_COUNT, DEFAULT_RELOAD_COUNT),
@@ -181,6 +225,10 @@ class SG150OptionsFlow(config_entries.OptionsFlow):
                         "mode": "box",
                     }
                 ),
+                vol.Required(
+                    CONF_HOME_PATH,
+                    default=options.get(CONF_HOME_PATH, DEFAULT_HOME_PATH),
+                ): selector.TextSelector(),
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)
