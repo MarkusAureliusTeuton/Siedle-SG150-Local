@@ -5,6 +5,7 @@ from collections.abc import Callable
 from datetime import datetime, timezone
 import logging
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 from .const import EVENT_DOORBELL, EVENT_VIDEO_ENDED
@@ -45,12 +46,14 @@ class SG150PortMonitor:
 
         return remove
 
-    async def async_start(self) -> None:
+    async def async_start(self, entry: ConfigEntry) -> None:
         if self._task is not None:
             return
         self._stop.clear()
-        self._task = self.hass.async_create_background_task(
-            self._run(), "SG150 local port monitor"
+        self._task = entry.async_create_background_task(
+            self.hass,
+            self._run(),
+            "SG150 local port monitor",
         )
 
     async def async_stop(self) -> None:
