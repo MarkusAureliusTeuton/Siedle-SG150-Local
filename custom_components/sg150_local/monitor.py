@@ -49,7 +49,7 @@ class SG150PortMonitor:
         if self._task is not None:
             return
         self._stop.clear()
-        self._task = self.hass.async_create_task(
+        self._task = self.hass.async_create_background_task(
             self._run(), "SG150 local port monitor"
         )
 
