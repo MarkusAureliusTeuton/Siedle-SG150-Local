@@ -11,8 +11,10 @@ from .const import (
     DEFAULT_RETURN_HOME,
     DOMAIN,
     RUNTIME_CONTROLLER,
+    RUNTIME_HISTORY,
 )
 from .controller import SG150TabletController
+from .history import SG150HistoryRecorder
 
 
 async def async_setup_entry(
@@ -20,10 +22,15 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    controller: SG150TabletController = hass.data[DOMAIN][entry.entry_id][
-        RUNTIME_CONTROLLER
-    ]
-    async_add_entities([SG150TabletStatusSensor(entry, controller)])
+    runtime = hass.data[DOMAIN][entry.entry_id]
+    controller: SG150TabletController = runtime[RUNTIME_CONTROLLER]
+    history: SG150HistoryRecorder = runtime[RUNTIME_HISTORY]
+    async_add_entities(
+        [
+            SG150TabletStatusSensor(entry, controller),
+            SG150HistoryStatusSensor(entry, history),
+        ]
+    )
 
 
 class SG150TabletStatusSensor(SensorEntity):
@@ -82,6 +89,58 @@ class SG150TabletStatusSensor(SensorEntity):
             self.async_write_ha_state()
 
         self._remove_listener = self._controller.add_listener(_update)
+
+    async def async_will_remove_from_hass(self) -> None:
+        if self._remove_listener is not None:
+            self._remove_listener()
+            self._remove_listener = None
+
+
+class SG150HistoryStatusSensor(SensorEntity):
+    _attr_has_entity_name = True
+    _attr_name = "Besucherbild-Historie"
+    _attr_icon = "mdi:image-multiple"
+
+    def __init__(self, entry: ConfigEntry, history: SG150HistoryRecorder) -> None:
+        self._history = history
+        self._attr_unique_id = f"{entry.entry_id}_visitor_image_history"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, entry.entry_id)},
+            name="Siedle SG150",
+            manufacturer="Siedle",
+            model="SG 150-0",
+        )
+        self._remove_listener = None
+
+    @property
+    def native_value(self) -> int:
+        return self._history.image_count
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        return {
+            "enabled": self._history.enabled,
+            "capture_delay_s": self._history.capture_delay,
+            "retention_days": self._history.retention_days,
+            "max_images": self._history.max_images,
+            "storage_root": str(self._history.storage_root),
+            "database_path": str(self._history.database_path),
+            "latest_image": self._history.latest_path,
+            "latest_timestamp": (
+                self._history.latest_timestamp.isoformat()
+                if self._history.latest_timestamp
+                else None
+            ),
+            "last_capture_source": self._history.last_capture_source or None,
+            "last_error": self._history.last_error or None,
+        }
+
+    async def async_added_to_hass(self) -> None:
+        @callback
+        def _update() -> None:
+            self.async_write_ha_state()
+
+        self._remove_listener = self._history.add_listener(_update)
 
     async def async_will_remove_from_hass(self) -> None:
         if self._remove_listener is not None:

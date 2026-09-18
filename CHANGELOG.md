@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.6.0
+
+- Automatische Besucherbild-Historie ergänzt.
+- Bei jeder erkannten SG150-Videosession wird standardmäßig nach 5 Sekunden ein JPEG aus dem lokalen MJPEG-Stream archiviert.
+- Bilder werden nach Jahr/Monat/Tag unter `/config/sg150_history` abgelegt.
+- Metadaten werden zusätzlich in `history.sqlite3` gespeichert.
+- Aufbewahrungsdauer, maximale Bildanzahl, Aufnahmeverzögerung und Speicherordner sind konfigurierbar.
+- Neue Kamera-Entität **Letztes Besucherbild**.
+- Neuer Sensor **Besucherbild-Historie**.
+- Neuer manueller Button **Besucherbild jetzt speichern**.
+- Alte Bilder werden zusammen mit ihren Datenbankeinträgen automatisch gelöscht.
+- MJPEG-JPEG-Parser in ein gemeinsames Modul ausgelagert und von Livekamera sowie Historie verwendet.
+
+
 ## 0.5.2
 
 - Korrigiert die Annahme aus 0.5.1: Fully **Unlock Screen** zeigt nur Fully selbst über dem Android-Sperrbildschirm.

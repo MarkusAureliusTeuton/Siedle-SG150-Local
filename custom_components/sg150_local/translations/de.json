@@ -21,7 +21,7 @@
     "step": {
       "init": {
         "title": "Türtablet und Siedle-App",
-        "description": "Empfohlen: Der bestehende lokale SG150-Türruftrigger schaltet das Tablet ein und holt die bereits im Hintergrund aktive Siedle-App in den Vordergrund. Wichtig: Android darf dabei keinen System-Sperrbildschirm erzwingen; Fully kann andere Apps nicht durch den Android-Keyguard hindurch anzeigen. Für ein Wandtablet daher Android-Sperre 'Keine' und Schutz über Fully Kiosk Mode/PIN verwenden. Nach Ende der Videosession kann automatisch zu Fully/Home Assistant zurückgekehrt werden.",
+        "description": "Empfohlen: Der bestehende lokale SG150-Türruftrigger schaltet das Tablet ein und holt die bereits im Hintergrund aktive Siedle-App in den Vordergrund. Wichtig: Android darf dabei keinen System-Sperrbildschirm erzwingen; Fully kann andere Apps nicht durch den Android-Keyguard hindurch anzeigen. Für ein Wandtablet daher Android-Sperre 'Keine' und Schutz über Fully Kiosk Mode/PIN verwenden. Nach Ende der Videosession kann automatisch zu Fully/Home Assistant zurückgekehrt werden. Optional kann bei jedem Türruf nach einer einstellbaren Verzögerung ein JPEG aus dem lokalen SG150-MJPEG-Stream archiviert werden. Bilder werden als Dateien abgelegt; Zeitstempel und Metadaten landen zusätzlich in einer SQLite-Datenbank.",
         "data": {
           "fully_device_id": "Fully-Kiosk-Tablet",
           "fully_screen_entity": "Fully-Kiosk Screen-Schalter",
@@ -36,7 +36,12 @@
           "reload_delay_ms": "Abstand zwischen HA-Seitenladungen in ms",
           "return_home": "Nach Ende der Videosession automatisch zu Fully/HA zurück",
           "return_delay_s": "Rückkehrverzögerung in Sekunden",
-          "home_path": "Normale Fully/HA-Startseite (Pfad/URL)"
+          "home_path": "Normale Fully/HA-Startseite (Pfad/URL)",
+          "history_enabled": "Besucherbild-Historie automatisch speichern",
+          "history_delay_s": "Aufnahmeverzögerung nach Türruf in Sekunden",
+          "history_retention_days": "Bilder nach Tagen automatisch löschen",
+          "history_max_images": "Maximale Anzahl gespeicherter Bilder",
+          "history_storage_dir": "Speicherordner relativ zu /config"
         }
       }
     }

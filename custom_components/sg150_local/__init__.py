@@ -14,9 +14,11 @@ from .const import (
     DEFAULT_PORT,
     DOMAIN,
     RUNTIME_CONTROLLER,
+    RUNTIME_HISTORY,
     RUNTIME_MONITOR,
 )
 from .controller import SG150TabletController
+from .history import SG150HistoryRecorder
 from .monitor import SG150PortMonitor
 
 PLATFORMS = [
@@ -43,15 +45,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         poll_ms,
         off_confirmations,
     )
+    history = SG150HistoryRecorder(hass, entry, monitor)
     controller = SG150TabletController(hass, entry, monitor)
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
         RUNTIME_MONITOR: monitor,
         RUNTIME_CONTROLLER: controller,
+        RUNTIME_HISTORY: history,
     }
 
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
+    await history.async_start(entry)
     await monitor.async_start(entry)
     await controller.async_start()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -63,6 +68,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if unloaded:
         runtime = hass.data[DOMAIN].pop(entry.entry_id)
         await runtime[RUNTIME_CONTROLLER].async_stop()
+        await runtime[RUNTIME_HISTORY].async_stop()
         await runtime[RUNTIME_MONITOR].async_stop()
     return unloaded
 
