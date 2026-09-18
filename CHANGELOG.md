@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.2
+
+- Korrigiert die Annahme aus 0.5.1: Fully **Unlock Screen** zeigt nur Fully selbst über dem Android-Sperrbildschirm.
+- Andere Apps wie die Siedle-App bleiben hinter dem Android-Keyguard und können von Fully nicht zuverlässig entsperrt werden.
+- Der Fully-Zwischenschritt vor dem Start der Siedle-App wurde wieder entfernt.
+- Empfohlene Konfiguration für das dedizierte Wandtablet: Android-Bildschirmsperre **Keine**, Zugriffsschutz über Fully Kiosk Mode/PIN.
+- Bei reinem Swipe-Lockscreen kann alternativ Fully **Unlock Swipe Screen Lock (experimental)** getestet werden.
+
+
 ## 0.5.1
 
 - Beim Türruf wird nach dem Einschalten des Displays zuerst Fully Kiosk in den Vordergrund geholt.

@@ -363,12 +363,11 @@ class SG150TabletController:
             self._set_status("aktiv", action)
             await self._async_turn_screen(True)
 
-            # Bring Fully to the foreground first. On dedicated wall tablets
-            # Fully can be configured to show above / dismiss a non-secure
-            # lock screen. Starting Siedle directly after screen-on can
-            # otherwise leave Android's keyguard in front of the call UI.
-            await self._async_start_fully()
-
+            # Important: Fully's "Unlock Screen" can only show Fully itself
+            # above Android's lock screen. It cannot unlock the keyguard for
+            # another app such as the Siedle app. Therefore the recommended
+            # wall-tablet setup uses no Android system screen lock and relies
+            # on Fully Kiosk Mode/PIN for access protection.
             wake_ms = int(
                 self.entry.options.get(CONF_WAKE_DELAY_MS, DEFAULT_WAKE_DELAY_MS)
             )
