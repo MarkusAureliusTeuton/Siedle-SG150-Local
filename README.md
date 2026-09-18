@@ -26,7 +26,7 @@ Im realen A/B-Test wurde bestätigt:
 
 Die Integration erzeugt keinen zweiten Trigger. Sie verwendet weiterhin ausschließlich den vorhandenen lokalen SG150-Porttrigger. Die Siedle-App dient im Hintergrund als Teilnehmer, der die SG150-Session entstehen lässt.
 
-## Empfohlener Tablet-Ablauf ab v0.5.0
+## Empfohlener Tablet-Ablauf ab v0.5.1
 
 Normalzustand:
 
@@ -34,7 +34,7 @@ Normalzustand:
 
 Beim Klingeln:
 
-`Siedle-App erhält den Ruf im Hintergrund → SG150 öffnet Videosession → SG150 Local erkennt Port 20502 → Display EIN → Siedle-App in den Vordergrund`
+`Siedle-App erhält den Ruf im Hintergrund → SG150 öffnet Videosession → SG150 Local erkennt Port 20502 → Display EIN → Fully kurz in den Vordergrund → Siedle-App in den Vordergrund`
 
 Nach Ende der Videosession:
 
@@ -56,6 +56,8 @@ Am Tablet daher einmalig prüfen:
 - keine systemseitige Schlaf-/Standby-Optimierung, die die Siedle-App beendet
 - Siedle-App nicht per „Beenden erzwingen“ stoppen
 - Fully Kiosk darf externe Apps starten
+- in Fully unter **Device Management → Unlock Screen** aktivieren
+- wenn Android trotzdem einen PIN-/Muster-Sperrbildschirm zeigt: auf dem dedizierten Wandtablet die Android-Bildschirmsperre auf **Keine** stellen; den Zugriff stattdessen über den Fully-Kiosk-Modus/PIN schützen
 
 Diese Android-Systemeinstellungen kann die Home-Assistant-Integration nicht selbst verändern.
 
@@ -120,7 +122,13 @@ Der Sensor **Tabletsteuerung** zeigt unter anderem:
 
 ## Status
 
-Aktuelle Version: **0.5.0**
+Aktuelle Version: **0.5.1**
+
+### v0.5.1
+
+- Bildschirm-Aktivierung robuster gemacht: Nach `screen_on` wird zuerst Fully in den Vordergrund geholt und erst danach die Siedle-App gestartet.
+- Dadurch kann Fully seine konfigurierte **Unlock Screen**-Funktion anwenden, bevor Android die Siedle-App anzeigt.
+- Dokumentation um Android-/Fully-Sperrbildschirmhinweise ergänzt.
 
 ### v0.5.0
 
