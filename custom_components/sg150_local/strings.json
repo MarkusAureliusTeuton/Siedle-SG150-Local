@@ -1,0 +1,40 @@
+{
+  "title": "Siedle SG150 Local",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Siedle SG150 lokal einrichten",
+        "description": "Überwacht den lokalen MJPEG-Port. Keine Cloud und kein Internet erforderlich.",
+        "data": {
+          "host": "SG150 IP-Adresse",
+          "port": "MJPEG-Port",
+          "poll_interval_ms": "Abfrageintervall in ms",
+          "off_confirmations": "Fehlversuche bis AUS"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Diese SG150-Instanz ist bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Türtablet und Anzeige",
+        "description": "Optional: Fully Kiosk direkt aus der Siedle-Integration steuern. Die Pfade dürfen relativ sein; verwendet wird automatisch die lokale Home-Assistant-URL.",
+        "data": {
+          "fully_device_id": "Fully-Kiosk-Tablet",
+          "fully_screen_entity": "Fully-Kiosk Screen-Schalter",
+          "door_path": "Pfad/URL der Türansicht",
+          "home_path": "Pfad/URL der normalen Startseite",
+          "auto_tablet": "Tablet bei Türruf automatisch anzeigen",
+          "wake_delay_ms": "Wartezeit nach Display EIN in ms",
+          "reload_count": "Türseite wie oft laden",
+          "reload_delay_ms": "Abstand zwischen Wiederholungen in ms",
+          "return_home": "Nach Türruf automatisch zur Startseite zurück",
+          "return_delay_s": "Rückkehrverzögerung in Sekunden"
+        }
+      }
+    }
+  }
+}
